@@ -1,0 +1,24 @@
+Script "GitIngest"
+
+
+# Nome do arquivo de saída
+$outputFile = "Contexto_Projeto_WPF.txt"
+
+# Definindo extensões cruciais: UI, Lógica, Config de Projeto e Dependências
+$extensions = "*.cs", "*.xaml", "*.csproj", "*.xaml.cs", "appsettings.json", "App.config"
+
+# Get-ChildItem filtrando o que não queremos (bin, obj, .git, .vs)
+Get-ChildItem -Recurse -Include $extensions -Exclude "Reference.cs" | Where-Object { 
+    $_.FullName -notmatch "\\bin\\" -and 
+    $_.FullName -notmatch "\\obj\\" -and 
+    $_.FullName -notmatch "\\\.vs\\" -and
+    $_.FullName -notmatch "\\\.git\\"
+} | ForEach-Object {
+    "========================================`n" | Out-File -FilePath $outputFile -Append
+    "ARQUIVO: $($_.FullName)`n" | Out-File -FilePath $outputFile -Append
+    "========================================`n" | Out-File -FilePath $outputFile -Append
+    Get-Content $_.FullName | Out-File -FilePath $outputFile -Append
+    "`n`n" | Out-File -FilePath $outputFile -Append
+}
+
+Write-Host "Pronto! O arquivo '$outputFile' foi gerado com todo o contexto necessário." -ForegroundColor Green

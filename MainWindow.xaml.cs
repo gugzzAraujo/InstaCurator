@@ -46,7 +46,7 @@ namespace InstaCurator
         private double _limiteMinX = 0;
         private double _limiteMinY = 0;
 
-        // SISTEMA DE CACHE DO BING
+
         private Dictionary<string, List<string>> _cacheBuscaBing = new Dictionary<string, List<string>>();
         private Dictionary<string, int> _indiceBuscaBing = new Dictionary<string, int>();
 
@@ -59,7 +59,7 @@ namespace InstaCurator
         private const string ApiHost = "instagram-downloader-scraper-reels-igtv-posts-stories.p.rapidapi.com";
 
 
-        // ✅ O GPS DO ARQUIVO DE CONFIGURAÇÃO FICA AQUI NO TOPO
+
         private string caminhoConfig = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "config_equipe.json");
 
         public MainWindow()
@@ -92,17 +92,16 @@ namespace InstaCurator
                     var json = System.IO.File.ReadAllText(caminhoConfig);
                     dynamic config = Newtonsoft.Json.JsonConvert.DeserializeObject(json);
 
-                    // 1. Chaves da IA e Telegram
+
                     _groqKey = config.GroqKey;
                     _botToken = config.BotToken;
                     _chatId = config.ChatId;
 
-                    // 2. A PEÇA QUE FALTAVA: Lendo as chaves de Imagem e Instagram!
+
                     _unsplashApiKey = config.UnsplashKey;
                     _pexelsApiKey = config.PexelsKey;
                     _rapidApiKey = config.RapidApiKey;
 
-                    // Se tiver token, já liga o bot do Telegram
                     if (!string.IsNullOrEmpty(_botToken))
                     {
                         botClient = new TelegramBotClient(_botToken);
@@ -257,7 +256,7 @@ namespace InstaCurator
                 string tomSelecionado = ((ComboBoxItem)CmbTom.SelectedItem).Content.ToString();
                 string fonteSelecionada = ((ComboBoxItem)CmbFonteImagem.SelectedItem).Content.ToString();
 
-                // 1. DEFINIÇÃO DA ESTRATÉGIA E SCHEMA (CONTRATO) DA IA
+
                 string diretrizCopy = tomSelecionado.Contains("Extremo") ? "Tom APELATIVO e EXTREMO. Use gatilhos de choque." :
                                       tomSelecionado.Contains("Sombrio") ? "Tom SOMBRIO e de SUSPENSE." :
                                       tomSelecionado.Contains("Emocional") ? "Tom EMOCIONAL e INSPIRADOR." : "Tom INFORMATIVO e DINÂMICO.";
@@ -266,7 +265,7 @@ namespace InstaCurator
                     ? "Escreva 'Prompts de IA' curtos e hiper-focados em INGLÊS. Foco total em cinematografia, dark fantasy, sem texto na imagem."
                     : "Gere palavras-chave literais em INGLÊS focadas no cenário físico ou objeto.";
 
-                // IMPONDO O MOLDE EXATO E FORÇANDO CENÁRIOS DIFERENTES
+                
                 string schemaEsperado = @"
 {
   ""titulo_capa"": ""TÍTULO FORTE AQUI"",
@@ -345,31 +344,29 @@ OBRIGATÓRIO: Retorne a sua resposta EXATAMENTE com a seguinte estrutura JSON. N
                     TxtLegendaGlobal.Text = dados["legenda"]?.ToString() ?? "";
                 });
 
-                // 2. DOWNLOAD DE IMAGENS ESTRITAMENTE SEQUENCIAL (ANTI-BAN CLOUDFLARE)
                 int total = SlidesCarrossel.Count;
 
                 for (int i = 0; i < total; i++)
                 {
                     var slide = SlidesCarrossel[i];
 
-                    // Atualiza a interface
+
                     Application.Current.Dispatcher.Invoke(() => {
                         TxtProgressoStatus.Text = $"Pintando slide {i + 1} de {total}... 🖼️ (Isso pode levar alguns segundos)";
                         BarraProgresso.Value = 30 + ((double)i / total * 65);
                     });
 
-                    // Pede a imagem e ESPERA ela terminar completamente antes de seguir
+
                     slide.ImagemFundoBytes = await FetchImageForSlide(slide.Keyword, fonteSelecionada);
 
-                    // O SEGREDO DO SÊNIOR: Uma pausa obrigatória de 3 segundos entre cada imagem.
-                    // Isso engana o servidor e faz ele achar que você é um usuário comum gerando uma imagem por vez.
+
                     if (i < total - 1)
                     {
                         await Task.Delay(3000);
                     }
                 }
 
-                // 3. FINALIZAÇÃO DA UI
+
                 Application.Current.Dispatcher.Invoke(() => {
                     BarraProgresso.Value = 100;
                     TxtProgressoStatus.Text = "Tudo pronto! ✨ Abrindo editor...";
@@ -647,10 +644,7 @@ REGRAS:
             catch { return null; }
         }
 
-        // ==========================================
-        // FETCH IMAGE ORIGINAL (Pexels / Unsplash / IA Melhorado)
-        // ==========================================
-        // Adicionamos um parâmetro de tentativas para resiliência
+
         private async Task<byte[]> FetchImageForSlide(string query, string fonte, int tentativas = 3)
         {
             if (string.IsNullOrWhiteSpace(query)) query = "dark cinematic epic background";
@@ -668,12 +662,12 @@ REGRAS:
 
                         var res = await httpClient.SendAsync(req, cts.Token);
 
-                        // DIAGNÓSTICO LIGADO:
+
                         if (!res.IsSuccessStatusCode)
                         {
                             string erro = await res.Content.ReadAsStringAsync();
                             Application.Current.Dispatcher.Invoke(() => MessageBox.Show($"Erro Pexels ({res.StatusCode}):\n{erro}", "Diagnóstico"));
-                            break; // Sai do loop para você ver o erro e arrumar
+                            break; 
                         }
 
                         var json = JObject.Parse(await res.Content.ReadAsStringAsync());
@@ -691,7 +685,7 @@ REGRAS:
 
                         var res = await httpClient.SendAsync(req, cts.Token);
 
-                        // DIAGNÓSTICO LIGADO:
+                        
                         if (!res.IsSuccessStatusCode)
                         {
                             string erro = await res.Content.ReadAsStringAsync();
@@ -737,7 +731,7 @@ REGRAS:
                 if (i < tentativas - 1) await Task.Delay(2000);
             }
 
-            // Fallback de fundo cinza
+
             using (var fallbackImg = new SixLabors.ImageSharp.Image<Rgba32>(1080, 1350))
             {
                 fallbackImg.Mutate(x => x.Fill(SLColor.ParseHex("#1E1E1E")));
@@ -843,9 +837,7 @@ REGRAS:
             if (_isDragging) PreviewCanvas_MouseUp(sender, null);
         }
 
-        // ==========================================
-        // O BAKE FINAL (RENDERIZAÇÃO IMAGESHARP E ENVIO)
-        // ==========================================
+
         private async void BtnFinalizarCarrossel_Click(object sender, RoutedEventArgs e)
         {
             if (SlidesCarrossel.Count == 0) return;
